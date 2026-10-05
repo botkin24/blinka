@@ -1,0 +1,44 @@
+# Секреты и окружения
+.env
+.env.*
+!.env.example
+
+# Данные и артефакты Django
+media/
+staticfiles/
+*.sql
+*.dump
+*.sqlite3
+
+# Ключи и сертификаты
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Node / Nuxt
+node_modules/
+.nuxt/
+.output/
+.nitro/
+.cache/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ОС
+.DS_Store
+Thumbs.db
+desktop.ini

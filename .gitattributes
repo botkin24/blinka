@@ -1,0 +1,11 @@
+* text=auto
+
+# Файлы, которые исполняются или читаются в Linux-контейнерах, — всегда LF
+*.sh text eol=lf
+Dockerfile text eol=lf
+Caddyfile text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf

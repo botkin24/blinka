@@ -47,6 +47,7 @@ Django 5 + PostgreSQL 16 + Django Ninja, Nuxt 3 (SSR), Docker Compose, Caddy. Py
 - `pytest` зелёный.
 - `ruff check` и `ruff format --check` без ошибок.
 - Если менялись зависимости: `pip-audit` / `npm audit --omit=dev` без high и critical.
+  Исключение — пакеты только для сборки Nuxt, не попадающие в `.output`, по записи в разделе 15 ТЗ (см. 11.9).
 
 ## Git и GitHub
 

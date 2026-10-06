@@ -638,6 +638,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 
 - Python-зависимости через uv с lock-файлом и хешами; JS — `package-lock.json`, установка через `npm ci`.
 - Перед каждым деплоем: `pip-audit` и `npm audit --omit=dev` без уязвимостей уровня high и critical.
+- Исключение: high/critical без исправленной версии в пакетах, которые используются только при сборке Nuxt и не попадают в `.output` (проверяется поиском в `.output/server/node_modules`), допускаются по записи в журнале решений (раздел 15) и перепроверяются при каждом обновлении Nuxt. Сейчас: `braces`, `node-forge`.
 - Dependabot для pip, npm, Docker и GitHub Actions; обновления раз в месяц или сразу при уязвимости.
 - Новая зависимость добавляется только при реальной необходимости; предпочтение популярным поддерживаемым пакетам.
 
@@ -757,3 +758,4 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 | Nuxt 3                                              | Nuxt 4                                            | поддержка Nuxt 3 закончилась 31.07.2026, нет патчей безопасности                                |
 | HSTS без `includeSubDomains`, `check --deploy` без предупреждений | `includeSubDomains`, W021 (preload) подавлено | preload — отдельное решение; остальные проверки `check --deploy` проходят без предупреждений   |
 | Все сервисы, кроме Caddy, только во `internal`      | `backend` ещё в сети `egress` без портов          | исходящие уведомления в Telegram; `db` и `frontend` без выхода в интернет                       |
+| `npm audit --omit=dev` строго без high             | исключение для `braces` и `node-forge`            | исправлений нет; пакеты только в инструментах сборки Nuxt (nitropack, @nuxt/cli), в `.output` и runtime-образ не попадают |

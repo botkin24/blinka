@@ -1,0 +1,40 @@
+{
+	# API управления Caddy не нужен.
+	admin off
+}
+
+# Локально — localhost (сертификат внутреннего CA Caddy), в проде — домен.
+{$CADDY_SITE_ADDRESS} {
+	encode zstd gzip
+
+	# HSTS выставляет Django в prod; в Caddy он добавится на этапе запуска (SPEC 11.4).
+	header {
+		defer
+		-Server
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+	}
+
+	# Статика и медиа Django — файлы из томов, без листинга каталогов.
+	handle_path /static/* {
+		root * /srv/static
+		file_server
+	}
+	handle_path /media/* {
+		root * /srv/media
+		file_server
+	}
+
+	# Админка (путь из ADMIN_URL) и API — в Django.
+	@django path /{$ADMIN_URL}* /api/*
+	handle @django {
+		reverse_proxy backend:8000
+	}
+
+	# Всё остальное — Nuxt.
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

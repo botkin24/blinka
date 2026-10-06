@@ -1,0 +1,133 @@
+name: blinka
+
+# Общие меры для всех контейнеров (SPEC 11.6).
+x-hardening: &hardening
+  restart: unless-stopped
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  db:
+    <<: *hardening
+    image: postgres:16.15-trixie
+    # Не от root: без root образу не нужны CHOWN/SETUID, поэтому работает с cap_drop: ALL.
+    user: postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      APP_DB_NAME: ${APP_DB_NAME:?}
+      APP_DB_USER: ${APP_DB_USER:?}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/postgres/init-app-user.sh:/docker-entrypoint-initdb.d/10-init-app-user.sh:ro
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  backend:
+    <<: *hardening
+    build: ./backend
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:?}
+      ADMIN_URL: ${ADMIN_URL:?}
+      APP_DB_NAME: ${APP_DB_NAME:?}
+      APP_DB_USER: ${APP_DB_USER:?}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?}
+      DB_HOST: db
+      DB_PORT: "5432"
+    volumes:
+      - static:/app/staticfiles
+      - media:/app/media
+    networks:
+      - internal
+      # Только исходящий доступ (уведомления в Telegram, SPEC 11.10); портов нет.
+      - egress
+    depends_on:
+      db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  frontend:
+    <<: *hardening
+    build: ./frontend
+    read_only: true
+    tmpfs:
+      - /tmp
+    networks:
+      - internal
+    depends_on:
+      backend:
+        condition: service_started
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
+  caddy:
+    <<: *hardening
+    image: caddy:2.11.6-alpine
+    cap_add:
+      - NET_BIND_SERVICE
+    # Единственные опубликованные порты во всём проекте (SPEC 3, 11.6).
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CADDY_SITE_ADDRESS: ${CADDY_SITE_ADDRESS:?}
+      ADMIN_URL: ${ADMIN_URL:?}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+      - static:/srv/static:ro
+      - media:/srv/media:ro
+    networks:
+      - internal
+      - edge
+    depends_on:
+      - backend
+      - frontend
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+networks:
+  # Без выхода в интернет: db, backend, frontend, caddy.
+  internal:
+    internal: true
+  # Исходящий доступ для backend.
+  egress: {}
+  # Внешняя сеть Caddy: публикация 80/443 и выпуск сертификатов.
+  edge: {}
+
+volumes:
+  pgdata:
+  static:
+  media:
+  caddy_data:
+  caddy_config:

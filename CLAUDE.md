@@ -4,7 +4,7 @@
 
 ## Стек
 
-Django 5 + PostgreSQL 16 + Django Ninja, Nuxt 3 (SSR), Docker Compose, Caddy. Python-зависимости через uv, JS — npm (`npm ci`).
+Django 5 + PostgreSQL 16 + Django Ninja, Nuxt 4 (SSR), Docker Compose, Caddy. Python-зависимости через uv, JS — npm (`npm ci`).
 
 ## Порядок работы
 
